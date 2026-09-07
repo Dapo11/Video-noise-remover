@@ -19,7 +19,6 @@ export default function Home() {
     const ffmpeg = new FFmpeg();
     ffmpegRef.current = ffmpeg;
 
-    // Points to your public/ffmpeg directory
     const baseURL = window.location.origin + "/ffmpeg";
     await ffmpeg.load({
       coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
@@ -75,7 +74,8 @@ export default function Home() {
         sampleRate: 48000,
       });
 
-      const rawAudioBuffer = rawAudioData.buffer.slice(0);
+      // Fixed error 1: Cast slice to ArrayBuffer explicitly
+      const rawAudioBuffer = rawAudioData.buffer.slice(0) as ArrayBuffer;
       const audioBuffer = await audioCtx.decodeAudioData(rawAudioBuffer);
 
       const dfProcessor = new DeepFilterNet3Core({
@@ -94,7 +94,10 @@ export default function Home() {
       hpFilter.type = "highpass";
       hpFilter.frequency.value = 75;
 
-      const dfNode = await dfProcessor.createAudioWorkletNode(offlineCtx);
+      // Fixed error 2: Cast offlineCtx as dynamic BaseAudioContext for DeepFilterNet
+      const dfNode = await dfProcessor.createAudioWorkletNode(
+        offlineCtx as any,
+      );
 
       const bodyRestorer = offlineCtx.createBiquadFilter();
       bodyRestorer.type = "peaking";
@@ -113,8 +116,9 @@ export default function Home() {
       sibilanceCap.frequency.value = 8000;
       sibilanceCap.gain.value = -2.5;
 
+      // Fixed error 3: Explicit Float32Array typing
       const WaveShaperNode = offlineCtx.createWaveShaper();
-      WaveShaperNode.curve = makeAnalogueWarmthCurve(48000);
+      WaveShaperNode.curve = makeAnalogueWarmthCurve(48000) as Float32Array;
 
       const compressor = offlineCtx.createDynamicsCompressor();
       compressor.threshold.value = -16;
@@ -194,7 +198,10 @@ export default function Home() {
       ]);
 
       const outputData = (await ffmpeg.readFile("output.mp4")) as Uint8Array;
-      const outputBlob = new Blob([outputData.buffer], { type: "video/mp4" });
+      // Fixed error 4: Explicit ArrayBuffer cast for Blob construction
+      const outputBlob = new Blob([outputData.buffer as ArrayBuffer], {
+        type: "video/mp4",
+      });
       setOutputVideoSrc(URL.createObjectURL(outputBlob));
 
       setStatus("Complete!");
@@ -231,7 +238,6 @@ export default function Home() {
         </div>
       ) : (
         <div className="w-full max-w-xl md:max-w-3xl flex flex-col gap-6">
-          {/* File Upload Section */}
           <div className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 sm:p-6 shadow-xl">
             <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-2">
               Select Input Video:
@@ -248,7 +254,6 @@ export default function Home() {
             />
           </div>
 
-          {/* Status Bar */}
           <div className="bg-slate-800/40 border border-yellow-500/20 rounded-xl p-3 sm:p-4 text-center">
             <p className="text-xs sm:text-sm font-medium text-yellow-400">
               <span className="font-semibold text-slate-300">Status: </span>
@@ -256,10 +261,8 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Video Grid Section */}
           {videoSrc && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-              {/* Original Video Card */}
               <div className="flex flex-col gap-3 bg-slate-800/60 border border-slate-700/60 p-4 rounded-2xl shadow-xl">
                 <p className="text-xs sm:text-sm font-semibold text-slate-300">
                   Original Video
@@ -280,7 +283,6 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* Cleaned Result Card */}
               <div className="flex flex-col gap-3 bg-slate-800/60 border border-slate-700/60 p-4 rounded-2xl shadow-xl">
                 <p className="text-xs sm:text-sm font-semibold text-emerald-400">
                   Cleaned Studio Master
