@@ -19,7 +19,8 @@ export default function Home() {
     const ffmpeg = new FFmpeg();
     ffmpegRef.current = ffmpeg;
 
-    const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
+    // Points to your public/ffmpeg directory
+    const baseURL = window.location.origin + "/ffmpeg";
     await ffmpeg.load({
       coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
       wasmURL: await toBlobURL(
